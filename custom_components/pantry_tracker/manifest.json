@@ -8,7 +8,7 @@
     "voluptuous>=0.15.1"
   ],
   "dependencies": [],
-  "codeowners": ["@yourusername"],
+  "codeowners": ["@mintcreg"],
   "config_flow": false,
   "iot_class": "local_polling"
 }
