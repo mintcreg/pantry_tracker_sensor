@@ -1,6 +1,7 @@
 {
   "domain": "pantry_tracker",
   "name": "Pantry Tracker",
+  "domain": "pantry_tracker",
   "version": "1.0.0",
   "documentation": "https://github.com/yourusername/pantry_tracker",
   "requirements": [
