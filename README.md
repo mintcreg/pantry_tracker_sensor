@@ -38,10 +38,17 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
 
 ## Installation
 
-1. **Download and Install**  
+1. Add [https://github.com/mintcreg/pantry_tracker_sensor](https://github.com/mintcreg/pantry_tracker_sensor) to HACS
+
+2. Install from HACS
+
+3. Restart HomeAssistant
+
+**Alternatively**
+
+1. Download and Install 
    Copy the `pantry_tracker` folder to the `custom_components` directory in your Home Assistant configuration.
 
-   Example structure:
 
 
 
