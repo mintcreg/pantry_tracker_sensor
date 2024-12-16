@@ -56,10 +56,11 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
 
 The custom component provides the following services to interact with pantry products:
 
-| **Service**                   | **Parameters**                                                                                     | **Description**                                    |
+| **Service**                    | **Parameters**                                                                                     | **Description**                                    |
 |--------------------------------|---------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| `pantry_tracker.increase_count` | `entity_id` (string) <br> `amount` (int, optional, default: 1)                                    | Increase the count of a specific product.          |
-| `pantry_tracker.decrease_count` | `entity_id` (string) <br> `amount` (int, optional, default: 1)                                    | Decrease the count of a specific product.          |
+| `pantry_tracker.increase_count` | `product_name` (string) <br> `amount` (int, optional, default: 1)                                   | Increase the count of a specific product by its name. |
+| `pantry_tracker.decrease_count` | `product_name` (string) <br> `amount` (int, optional, default: 1)                                   | Decrease the count of a specific product by its name. |
+
 
 
 ### `pantry_tracker.increase_count`
