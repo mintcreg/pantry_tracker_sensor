@@ -76,6 +76,7 @@ The custom component provides the following services to interact with pantry pro
   data:
     entity_id: sensor.product_apple
     amount: 2
+  ```
 
 ### `pantry_tracker.decrease_count`
 
@@ -92,4 +93,12 @@ service: pantry_tracker.decrease_count
 data:
   entity_id: sensor.product_banana
   amount: 1
+```
+
+
+
+
+## Future Improvements
+- Ability to set the polling rate from default (30 seconds)
+
 
