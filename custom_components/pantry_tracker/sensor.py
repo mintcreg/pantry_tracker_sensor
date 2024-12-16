@@ -38,6 +38,7 @@ def sanitize_entity_id(name: str) -> str:
     """Sanitize the product name to create a unique entity ID without category."""
     return f"sensor.product_{name.lower().replace(' ', '_').replace('-', '_')}"
 
+
 async def remove_entity_async(hass: HomeAssistant, entity_id: str):
     """Remove an entity from Home Assistant's Entity Registry asynchronously."""
     entity_registry = async_get_entity_registry(hass)
@@ -209,7 +210,7 @@ async def async_setup_platform(
             fetched_entity_ids = set()
             new_prod_sensors = []  # Initialize a new list for new sensors
 
-            for p in products:
+            for p in hass.data[DOMAIN]["products"]:
                 try:
                     name = p["name"]
                     url = p["url"]
@@ -278,12 +279,17 @@ async def async_setup_platform(
             _LOGGER.error(f"Entity {entity_id} not found for increase_count")
             return
 
+        sensor = hass.data[DOMAIN]["entities"][entity_id]
+
         # Update counts via API
         try:
             async with session.post(
                 f"{BASE_URL}/update_count",
                 json={
-                    "entity_id": entity_id,
+                    # Original line:
+                    # "entity_id": entity_id,
+                    # Updated line using original product name:
+                    "product_name": sensor._product_name,
                     "action": "increase",
                     "amount": amount
                 }
@@ -292,7 +298,6 @@ async def async_setup_platform(
                     data = await response.json()
                     if data.get("status") == "ok":
                         new_count = data.get("count")
-                        sensor = hass.data[DOMAIN]["entities"][entity_id]
                         sensor.update_count(new_count)
                         _LOGGER.debug("Successfully increased count via API.")
                     else:
@@ -319,12 +324,17 @@ async def async_setup_platform(
             _LOGGER.error(f"Entity {entity_id} not found for decrease_count")
             return
 
+        sensor = hass.data[DOMAIN]["entities"][entity_id]
+
         # Update counts via API
         try:
             async with session.post(
                 f"{BASE_URL}/update_count",
                 json={
-                    "entity_id": entity_id,
+                    # Original line:
+                    # "entity_id": entity_id,
+                    # Updated line using original product name:
+                    "product_name": sensor._product_name,
                     "action": "decrease",
                     "amount": amount
                 }
@@ -333,7 +343,6 @@ async def async_setup_platform(
                     data = await response.json()
                     if data.get("status") == "ok":
                         new_count = data.get("count")
-                        sensor = hass.data[DOMAIN]["entities"][entity_id]
                         sensor.update_count(new_count)
                         _LOGGER.debug("Successfully decreased count via API.")
                     else:
@@ -352,6 +361,7 @@ async def async_setup_platform(
     hass.services.async_register(
         DOMAIN, "decrease_count", handle_decrease_count_service, schema=DECREASE_COUNT_SCHEMA
     )
+
 
 class CategoriesSensor(SensorEntity):
     """Sensor to track the number of pantry categories."""
@@ -380,6 +390,7 @@ class CategoriesSensor(SensorEntity):
         self.async_schedule_update_ha_state()
         _LOGGER.debug(f"Updated categories: {self._categories}")
 
+
 class ProductSensor(SensorEntity):
     """Sensor to track individual product counts."""
 
@@ -405,7 +416,6 @@ class ProductSensor(SensorEntity):
             "product_name": self._product_name,
             "url": self._url,
             "category": self._category
-
         }
 
     def update_attributes(self, url: str, category: str):
