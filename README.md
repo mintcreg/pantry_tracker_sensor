@@ -4,6 +4,9 @@
 <img src="https://github.com/mintcreg/pantry_tracker/blob/main/images/logo.webp" alt="Pantry Tracker Card Logo" width="300">
 </p>
 
+> [!CAUTION]
+> This is a work in progress and made using GPT and basic knowledge.
+
 ## Description
 
 The **Pantry Tracker Custom Components** repository provides a set of Home Assistant integrations to enable seamless interaction between the **Pantry Tracker Add-on** and Home Assistant. These components allow you to automatically create sensors for pantry categories and products, update their counts in real time, and manage their lifecycle effectively.
