@@ -43,9 +43,11 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
 
 1. Add [https://github.com/mintcreg/pantry_tracker_sensor](https://github.com/mintcreg/pantry_tracker_sensor) to HACS
 
-2. Install from HACS
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mintcreg&repository=pantry_tracker_sensor&category=Integration)
 
-3. Add the below to config.yaml
+3. Install from HACS
+
+4. Add the below to config.yaml
    ```yaml
    sensor:
      - platform: pantry_tracker
