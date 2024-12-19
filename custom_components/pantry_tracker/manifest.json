@@ -1,14 +1,15 @@
 {
   "domain": "pantry_tracker",
   "name": "Pantry Tracker Components",
+  "domain": "pantry_tracker",
   "version": "1.0.3",
-  "documentation": "https://github.com/yourusername/pantry_tracker",
+  "documentation": "https://github.com/mintcreg/pantry_tracker_sensor",
   "requirements": [
     "requests>=2.28.1",
     "voluptuous>=0.15.1"
   ],
   "dependencies": [],
   "codeowners": ["@mintcreg"],
-  "config_flow": true,
+  "config_flow": false,
   "iot_class": "local_polling"
 }
