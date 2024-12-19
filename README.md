@@ -51,6 +51,8 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
    ```yaml
    sensor:
      - platform: pantry_tracker
+       scan_interval: 30  # (Optional) defaults to 30 if not defined
+       source: http://127.0.0.1:5000 # (Optional) defaults to http://127.0.0.1:5000 if not defined
    ```
    
 
@@ -65,6 +67,8 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
    ```yaml
    sensor:
      - platform: pantry_tracker
+       scan_interval: 30  # (Optional) defaults to 30 if not defined
+       source: http://127.0.0.1:5000 # (Optional) defaults to http://127.0.0.1:5000 if not defined
    ```
 
 ## Usage
