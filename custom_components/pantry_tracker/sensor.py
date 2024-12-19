@@ -6,7 +6,7 @@ from datetime import timedelta
 import aiohttp
 import voluptuous as vol
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -16,12 +16,22 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
-
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "pantry_tracker"
-SCAN_INTERVAL = timedelta(seconds=30)  # Set to 30 seconds for regular updates
-BASE_URL = "http://127.0.0.1:5000"  # Adjust if API is hosted elsewhere
+
+# Define configuration keys
+CONF_UPDATE_INTERVAL = "update_interval"
+CONF_SOURCE = "source"
+
+# Extend the PLATFORM_SCHEMA to include update_interval and source
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Optional(CONF_UPDATE_INTERVAL, default=30): cv.positive_int,
+        vol.Optional(CONF_SOURCE, default="http://127.0.0.1:5000"): cv.string,
+        # Add other configuration options here if needed
+    }
+)
 
 INCREASE_COUNT_SCHEMA = vol.Schema({
     vol.Required("entity_id"): cv.entity_id,
@@ -59,6 +69,14 @@ async def async_setup_platform(
     """Set up the Pantry Tracker sensors with persistent counts asynchronously."""
     _LOGGER.debug("Starting setup of pantry_tracker platform.")
 
+    # Extract update_interval and source from config and convert to timedelta
+    update_interval_seconds = config.get(CONF_UPDATE_INTERVAL, 30)
+    SCAN_INTERVAL = timedelta(seconds=update_interval_seconds)
+    _LOGGER.debug(f"Using update_interval: {SCAN_INTERVAL}")
+
+    source = config.get(CONF_SOURCE, "http://127.0.0.1:5000")
+    _LOGGER.debug(f"Using source: {source}")
+
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
         _LOGGER.debug("Initialized hass.data for pantry_tracker.")
@@ -74,7 +92,7 @@ async def async_setup_platform(
     # Fetch existing data from API
     try:
         # Fetch categories
-        async with session.get(f"{BASE_URL}/categories") as response:
+        async with session.get(f"{source}/categories") as response:
             if response.status == 200:
                 categories = await response.json()
                 if isinstance(categories, list):
@@ -88,7 +106,7 @@ async def async_setup_platform(
                 hass.data[DOMAIN]["categories"] = []
 
         # Fetch products
-        async with session.get(f"{BASE_URL}/products") as response:
+        async with session.get(f"{source}/products") as response:
             if response.status == 200:
                 products = await response.json()
                 if isinstance(products, list):
@@ -102,7 +120,7 @@ async def async_setup_platform(
                 hass.data[DOMAIN]["products"] = []
 
         # Fetch current counts
-        async with session.get(f"{BASE_URL}/counts") as response:
+        async with session.get(f"{source}/counts") as response:
             if response.status == 200:
                 counts = await response.json()
                 if isinstance(counts, dict):
@@ -161,7 +179,7 @@ async def async_setup_platform(
         _LOGGER.debug("Periodic update: Fetching latest data.")
         try:
             # Fetch categories
-            async with session.get(f"{BASE_URL}/categories") as response:
+            async with session.get(f"{source}/categories") as response:
                 if response.status == 200:
                     categories = await response.json()
                     if isinstance(categories, list):
@@ -175,7 +193,7 @@ async def async_setup_platform(
                     hass.data[DOMAIN]["categories"] = []
 
             # Fetch products
-            async with session.get(f"{BASE_URL}/products") as response:
+            async with session.get(f"{source}/products") as response:
                 if response.status == 200:
                     products = await response.json()
                     if isinstance(products, list):
@@ -189,7 +207,7 @@ async def async_setup_platform(
                     hass.data[DOMAIN]["products"] = []
 
             # Fetch current counts
-            async with session.get(f"{BASE_URL}/counts") as response:
+            async with session.get(f"{source}/counts") as response:
                 if response.status == 200:
                     counts = await response.json()
                     if isinstance(counts, dict):
@@ -284,11 +302,8 @@ async def async_setup_platform(
         # Update counts via API
         try:
             async with session.post(
-                f"{BASE_URL}/update_count",
+                f"{source}/update_count",
                 json={
-                    # Original line:
-                    # "entity_id": entity_id,
-                    # Updated line using original product name:
                     "product_name": sensor._product_name,
                     "action": "increase",
                     "amount": amount
@@ -329,11 +344,8 @@ async def async_setup_platform(
         # Update counts via API
         try:
             async with session.post(
-                f"{BASE_URL}/update_count",
+                f"{source}/update_count",
                 json={
-                    # Original line:
-                    # "entity_id": entity_id,
-                    # Updated line using original product name:
                     "product_name": sensor._product_name,
                     "action": "decrease",
                     "amount": amount
