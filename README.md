@@ -67,6 +67,85 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
      - platform: pantry_tracker
    ```
 
+## Usage
+
+<details>
+<summary>Auto Entities & Browsermod (No Tracker Card)</summary>
+ 
+<br>
+
+```yaml
+type: custom:auto-entities
+card:
+  type: entities
+  title: Pantry Products
+  show_header_toggle: false
+  state_color: true
+filter:
+  include:
+    - entity_id: sensor.product_*
+      options:
+        type: custom:template-entity-row
+        name: |
+          {{ state_attr(config.entity, 'product_name') }}
+        tap_action:
+          action: fire-dom-event
+          browser_mod:
+            service: browser_mod.popup
+            data:
+              title: Update Stock
+              content:
+                type: vertical-stack
+                cards:
+                  - type: custom:mushroom-template-card
+                    entity: this.entity_id
+                    primary: |
+                      Product: {{ state_attr(entity, 'product_name') }}
+                    secondary: |
+                      Stock Count: {{ states(entity) }}
+                    icon: mdi:food-apple
+                    layout: vertical
+              right_button: Add 1 Item
+              left_button: Remove 1 Item
+              right_button_action:
+                service: pantry_tracker.increase_count
+                data:
+                  entity_id: this.entity_id
+                  amount: 1
+              left_button_action:
+                service: pantry_tracker.decrease_count
+                data:
+                  entity_id: this.entity_id
+                  amount: 1
+
+  ```
+
+### Demo
+
+![Categories](https://raw.githubusercontent.com/mintcreg/pantry_tracker_sensor/main/images/no-card.gif)
+
+
+
+</details>
+
+<details>
+<summary>Tracker Card </summary>
+<br>
+Requires the Pantry Tracker Card - https://github.com/mintcreg/pantry_tracker_card
+<br>
+
+```yaml
+type: custom:pantry-card
+entity_prefix: sensor.product
+search: true
+show_images: true
+category_filter: true
+  ```
+
+
+</details>
+
+
 
 
 
