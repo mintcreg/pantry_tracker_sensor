@@ -43,6 +43,11 @@ DECREASE_COUNT_SCHEMA = vol.Schema({
     vol.Optional("amount", default=1): vol.Coerce(int)
 })
 
+# Define service schemas for barcode-based operations
+BARCODE_OPERATION_SCHEMA = vol.Schema({
+    vol.Required("barcode"): cv.string,
+    vol.Optional("amount", default=1): vol.Coerce(int)
+})
 
 def sanitize_entity_id(name: str) -> str:
     """Sanitize the product name to create a unique entity ID without category."""
@@ -406,7 +411,67 @@ async def async_setup_platform(
         except Exception as e:
             _LOGGER.error(f"Unexpected error while decreasing count via API: {e}")
 
+    # Service to increase product count by barcode
+    async def handle_barcode_increase_service(call: ServiceCall):
+        """Handle the barcode_increase service call."""
+        barcode = call.data["barcode"]
+        amount = call.data["amount"]
+        _LOGGER.debug(f"Service call to increase count by barcode: barcode={barcode}, amount={amount}")
+
+        # Find the sensor with the matching barcode
+        matching_sensors = [
+            sensor for sensor in hass.data[DOMAIN]["entities"].values()
+            if isinstance(sensor, ProductSensor) and sensor.extra_state_attributes.get("barcode") == barcode
+        ]
+
+        if not matching_sensors:
+            _LOGGER.error(f"No sensor found with barcode {barcode}")
+            return
+
+        for sensor in matching_sensors:
+            try:
+                new_count = sensor.native_value + amount
+                sensor.update_count(new_count)
+                _LOGGER.info(f"Increased count for sensor {sensor.entity_id} by {amount}. New count: {new_count}")
+            except Exception as e:
+                _LOGGER.error(f"Failed to increase count for {sensor.entity_id}: {e}")
+
+    # Service to decrease product count by barcode
+    async def handle_barcode_decrease_service(call: ServiceCall):
+        """Handle the barcode_decrease service call."""
+        barcode = call.data["barcode"]
+        amount = call.data["amount"]
+        _LOGGER.debug(f"Service call to decrease count by barcode: barcode={barcode}, amount={amount}")
+
+        # Find the sensor with the matching barcode
+        matching_sensors = [
+            sensor for sensor in hass.data[DOMAIN]["entities"].values()
+            if isinstance(sensor, ProductSensor) and sensor.extra_state_attributes.get("barcode") == barcode
+        ]
+
+        if not matching_sensors:
+            _LOGGER.error(f"No sensor found with barcode {barcode}")
+            return
+
+        for sensor in matching_sensors:
+            try:
+                new_count = max(sensor.native_value - amount, 0)  # Ensure count doesn't go negative
+                sensor.update_count(new_count)
+                _LOGGER.info(f"Decreased count for sensor {sensor.entity_id} by {amount}. New count: {new_count}")
+            except Exception as e:
+                _LOGGER.error(f"Failed to decrease count for {sensor.entity_id}: {e}")
+
     # Register the services
+    hass.services.async_register(
+        DOMAIN, "barcode_increase", handle_barcode_increase_service, schema=BARCODE_OPERATION_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, "barcode_decrease", handle_barcode_decrease_service, schema=BARCODE_OPERATION_SCHEMA
+    )
+    
+	
+	
+	# Register the services
     hass.services.async_register(
         DOMAIN, "increase_count", handle_increase_count_service, schema=INCREASE_COUNT_SCHEMA
     )
