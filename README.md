@@ -196,10 +196,3 @@ data:
   amount: 1
 ```
 
-
-
-
-## Future Improvements
-- Ability to set the polling rate from default (30 seconds)
-
-
