@@ -2,7 +2,7 @@
   "domain": "pantry_tracker",
   "name": "Pantry Tracker Components",
   "domain": "pantry_tracker",
-  "version": "1.0.4-dev",
+  "version": "1.0.4",
   "documentation": "https://github.com/mintcreg/pantry_tracker_sensor",
   "requirements": [
     "requests>=2.28.1",
