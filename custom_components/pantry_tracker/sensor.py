@@ -1,5 +1,3 @@
-"""Pantry Tracker Sensor Platform with Persistent Counts."""
-
 import logging
 from datetime import timedelta
 
@@ -13,7 +11,6 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +25,8 @@ CONF_SOURCE = "source"
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_UPDATE_INTERVAL, default=30): cv.positive_int,
-        vol.Optional(CONF_SOURCE, default="http://127.0.0.1:5000"): cv.string,
+        vol.Optional(CONF_SOURCE, default="http://homeassistant.local:8099"): cv.string,
+        # Removed CONF_SSL_CERT as per request
         # Add other configuration options here if needed
     }
 )
@@ -43,6 +41,11 @@ DECREASE_COUNT_SCHEMA = vol.Schema({
     vol.Optional("amount", default=1): vol.Coerce(int)
 })
 
+# Define service schemas for barcode-based operations
+BARCODE_OPERATION_SCHEMA = vol.Schema({
+    vol.Required("barcode"): cv.string,
+    vol.Optional("amount", default=1): vol.Coerce(int)
+})
 
 def sanitize_entity_id(name: str) -> str:
     """Sanitize the product name to create a unique entity ID without category."""
@@ -74,8 +77,17 @@ async def async_setup_platform(
     SCAN_INTERVAL = timedelta(seconds=update_interval_seconds)
     _LOGGER.debug(f"Using update_interval: {SCAN_INTERVAL}")
 
-    source = config.get(CONF_SOURCE, "http://127.0.0.1:5000")
+    source = config.get(CONF_SOURCE, "https://127.0.0.1:5000")
     _LOGGER.debug(f"Using source: {source}")
+
+    # Since SSL_CERT is removed, disable SSL verification by setting ssl=False
+    try:
+        connector = aiohttp.TCPConnector(ssl=False)
+        session = aiohttp.ClientSession(connector=connector)
+        _LOGGER.debug("Created aiohttp session with SSL verification disabled.")
+    except Exception as e:
+        _LOGGER.error(f"Failed to create aiohttp session: {e}")
+        return
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
@@ -87,7 +99,18 @@ async def async_setup_platform(
     hass.data[DOMAIN].setdefault("categories", [])
     hass.data[DOMAIN].setdefault("products", [])
 
-    session = async_get_clientsession(hass)
+    # Store session for cleanup
+    hass.data[DOMAIN]["session"] = session
+
+    # Register shutdown event to close the session
+    async def async_shutdown(event):
+        """Handle shutdown of the integration."""
+        session = hass.data[DOMAIN].get("session")
+        if session:
+            await session.close()
+            _LOGGER.debug("Closed aiohttp session")
+
+    hass.bus.async_listen_once("homeassistant_stop", async_shutdown)
 
     # Fetch existing data from API
     try:
@@ -134,9 +157,11 @@ async def async_setup_platform(
                 hass.data[DOMAIN]["product_counts"] = {}
     except aiohttp.ClientError as e:
         _LOGGER.error(f"HTTP error while fetching initial data: {e}")
+        await session.close()
         return
     except Exception as e:
         _LOGGER.error(f"Unexpected error while fetching initial data: {e}")
+        await session.close()
         return
 
     # Initialize the CategoriesSensor
@@ -147,15 +172,17 @@ async def async_setup_platform(
     prod_sensors = []
     for p in hass.data[DOMAIN]["products"]:
         try:
-            name = p["name"]
-            url = p["url"]
-            category = p["category"]
+            # Store all attributes from the product
+            product_attributes = p.copy()
+            name = product_attributes.pop("name")
+            unique_id = sanitize_entity_id(name)
+            url = product_attributes.pop("url", "")
+            category = product_attributes.pop("category", "")
         except KeyError as e:
             _LOGGER.error("Product missing key %s: %s", e, p)
             continue
 
         entity_id = sanitize_entity_id(name)
-        unique_id = f"pantry_tracker_{entity_id}"
         existing_entity = hass.data[DOMAIN]["entities"].get(entity_id)
 
         if existing_entity:
@@ -163,7 +190,14 @@ async def async_setup_platform(
             continue
         else:
             current_count = hass.data[DOMAIN]["product_counts"].get(entity_id, 0)
-            product_sensor = ProductSensor(name, url, category, unique_id, current_count)
+            product_sensor = ProductSensor(
+                name=name,
+                url=url,
+                category=category,
+                unique_id=unique_id,
+                initial_count=current_count,
+                additional_attributes=product_attributes
+            )
             prod_sensors.append(product_sensor)
             hass.data[DOMAIN]["entities"][entity_id] = product_sensor
 
@@ -230,25 +264,34 @@ async def async_setup_platform(
 
             for p in hass.data[DOMAIN]["products"]:
                 try:
-                    name = p["name"]
-                    url = p["url"]
-                    category = p["category"]
+                    # Store all attributes from the product
+                    product_attributes = p.copy()
+                    name = product_attributes.pop("name")
+                    unique_id = sanitize_entity_id(name)
+                    url = product_attributes.pop("url", "")
+                    category = product_attributes.pop("category", "")
                 except KeyError as e:
                     _LOGGER.error("Product missing key %s: %s", e, p)
                     continue
 
                 entity_id = sanitize_entity_id(name)
                 fetched_entity_ids.add(entity_id)
-                unique_id = f"pantry_tracker_{entity_id}"
 
                 if entity_id in hass.data[DOMAIN]["entities"]:
                     # Update existing sensor's attributes
                     sensor = hass.data[DOMAIN]["entities"][entity_id]
-                    sensor.update_attributes(url, category)
+                    sensor.update_attributes(url, category, product_attributes)
                 else:
                     # New product detected, create and add sensor
                     current_count = hass.data[DOMAIN]["product_counts"].get(entity_id, 0)
-                    product_sensor = ProductSensor(name, url, category, unique_id, current_count)
+                    product_sensor = ProductSensor(
+                        name=name,
+                        url=url,
+                        category=category,
+                        unique_id=unique_id,
+                        initial_count=current_count,
+                        additional_attributes=product_attributes
+                    )
                     new_prod_sensors.append(product_sensor)
                     hass.data[DOMAIN]["entities"][entity_id] = product_sensor
                     _LOGGER.info("Detected new product '%s'. Adding sensor.", name)
@@ -366,7 +409,67 @@ async def async_setup_platform(
         except Exception as e:
             _LOGGER.error(f"Unexpected error while decreasing count via API: {e}")
 
+    # Service to increase product count by barcode
+    async def handle_barcode_increase_service(call: ServiceCall):
+        """Handle the barcode_increase service call."""
+        barcode = call.data["barcode"]
+        amount = call.data["amount"]
+        _LOGGER.debug(f"Service call to increase count by barcode: barcode={barcode}, amount={amount}")
+
+        # Find the sensor with the matching barcode
+        matching_sensors = [
+            sensor for sensor in hass.data[DOMAIN]["entities"].values()
+            if isinstance(sensor, ProductSensor) and sensor.extra_state_attributes.get("barcode") == barcode
+        ]
+
+        if not matching_sensors:
+            _LOGGER.error(f"No sensor found with barcode {barcode}")
+            return
+
+        for sensor in matching_sensors:
+            try:
+                new_count = sensor.native_value + amount
+                sensor.update_count(new_count)
+                _LOGGER.info(f"Increased count for sensor {sensor.entity_id} by {amount}. New count: {new_count}")
+            except Exception as e:
+                _LOGGER.error(f"Failed to increase count for {sensor.entity_id}: {e}")
+
+    # Service to decrease product count by barcode
+    async def handle_barcode_decrease_service(call: ServiceCall):
+        """Handle the barcode_decrease service call."""
+        barcode = call.data["barcode"]
+        amount = call.data["amount"]
+        _LOGGER.debug(f"Service call to decrease count by barcode: barcode={barcode}, amount={amount}")
+
+        # Find the sensor with the matching barcode
+        matching_sensors = [
+            sensor for sensor in hass.data[DOMAIN]["entities"].values()
+            if isinstance(sensor, ProductSensor) and sensor.extra_state_attributes.get("barcode") == barcode
+        ]
+
+        if not matching_sensors:
+            _LOGGER.error(f"No sensor found with barcode {barcode}")
+            return
+
+        for sensor in matching_sensors:
+            try:
+                new_count = max(sensor.native_value - amount, 0)  # Ensure count doesn't go negative
+                sensor.update_count(new_count)
+                _LOGGER.info(f"Decreased count for sensor {sensor.entity_id} by {amount}. New count: {new_count}")
+            except Exception as e:
+                _LOGGER.error(f"Failed to decrease count for {sensor.entity_id}: {e}")
+
     # Register the services
+    hass.services.async_register(
+        DOMAIN, "barcode_increase", handle_barcode_increase_service, schema=BARCODE_OPERATION_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, "barcode_decrease", handle_barcode_decrease_service, schema=BARCODE_OPERATION_SCHEMA
+    )
+    
+	
+	
+	# Register the services
     hass.services.async_register(
         DOMAIN, "increase_count", handle_increase_count_service, schema=INCREASE_COUNT_SCHEMA
     )
@@ -404,9 +507,17 @@ class CategoriesSensor(SensorEntity):
 
 
 class ProductSensor(SensorEntity):
-    """Sensor to track individual product counts."""
+    """Sensor to track individual product counts and all associated attributes."""
 
-    def __init__(self, name: str, url: str, category: str, unique_id: str, initial_count: int = 0):
+    def __init__(
+        self,
+        name: str,
+        url: str,
+        category: str,
+        unique_id: str,
+        initial_count: int = 0,
+        additional_attributes: dict = None
+    ):
         """Initialize the ProductSensor."""
         self._product_name = name
         self._url = url
@@ -415,6 +526,7 @@ class ProductSensor(SensorEntity):
         self._attr_name = f"Product: {name}"
         self._attr_icon = "mdi:barcode-scan"
         self._count = initial_count
+        self._additional_attributes = additional_attributes if additional_attributes else {}
 
     @property
     def native_value(self):
@@ -424,18 +536,24 @@ class ProductSensor(SensorEntity):
     @property
     def extra_state_attributes(self):
         """Return additional attributes for the sensor."""
-        return {
+        attrs = {
             "product_name": self._product_name,
             "url": self._url,
-            "category": self._category
+            "category": self._category,
+            "count": self._count
         }
+        # Merge additional attributes
+        attrs.update(self._additional_attributes)
+        return attrs
 
-    def update_attributes(self, url: str, category: str):
+    def update_attributes(self, url: str, category: str, additional_attributes: dict = None):
         """Update product attributes."""
         self._url = url
         self._category = category
+        if additional_attributes:
+            self._additional_attributes = additional_attributes
         self.async_schedule_update_ha_state()
-        _LOGGER.debug(f"Updated attributes for {self.entity_id}: URL={self._url}, Category={self._category}")
+        _LOGGER.debug(f"Updated attributes for {self.entity_id}: URL={self._url}, Category={self._category}, Additional Attributes={self._additional_attributes}")
 
     def update_count(self, new_count: int):
         """Update the count of the product."""
