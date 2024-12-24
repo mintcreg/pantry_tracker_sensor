@@ -32,10 +32,8 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
 ## Requirements
 
 1. **Pantry Tracker Add-on**  
-   The [Pantry Tracker Add-on](https://github.com/mintcreg/pantry_tracker) must be installed and running.
+   The [Pantry Tracker Add-on 1.0.51 (onward)](https://github.com/mintcreg/pantry_tracker) must be installed and running.
 
-2. **Flask API Connection**  
-   The custom component connects to the Flask API provided by the add-on. Ensure the API is accessible and running on the default port `5000`.
 
 ---
 
@@ -52,7 +50,6 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
    sensor:
      - platform: pantry_tracker
        scan_interval: 30  # (Optional) defaults to 30 if not defined
-       source: https://127.0.0.1:5000 # (Optional) defaults to https://127.0.0.1:5000 if not defined
    ```
    
 
@@ -68,7 +65,6 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
    sensor:
      - platform: pantry_tracker
        scan_interval: 30  # (Optional) defaults to 30 if not defined
-       source: https://127.0.0.1:5000 # (Optional) defaults to https://127.0.0.1:5000 if not defined
    ```
 
 ## Usage
