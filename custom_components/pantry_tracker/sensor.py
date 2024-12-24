@@ -1,5 +1,3 @@
-"""Pantry Tracker Sensor Platform with Persistent Counts."""
-
 import logging
 from datetime import timedelta
 
@@ -27,7 +25,7 @@ CONF_SOURCE = "source"
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_UPDATE_INTERVAL, default=30): cv.positive_int,
-        vol.Optional(CONF_SOURCE, default="https://127.0.0.1:5000"): cv.string,
+        vol.Optional(CONF_SOURCE, default="http://homeassistant.local:8099"): cv.string,
         # Removed CONF_SSL_CERT as per request
         # Add other configuration options here if needed
     }
