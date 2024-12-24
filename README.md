@@ -153,38 +153,35 @@ category_filter: true
 
 The custom component provides the following services to interact with pantry products:
 
-| **Service**                    | **Parameters**                                                                                     | **Description**                                    |
-|--------------------------------|---------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| `pantry_tracker.increase_count` | `product_name` (string) <br> `amount` (int, optional, default: 1)                                   | Increase the count of a specific product by its name. |
-| `pantry_tracker.decrease_count` | `product_name` (string) <br> `amount` (int, optional, default: 1)                                   | Decrease the count of a specific product by its name. |
+| **Service**                      | **Parameters**                                                                                        | **Description**                                             |
+|----------------------------------|------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| `pantry_tracker.increase_count`  | `product_name` (string) <br> `amount` (int, optional, default: 1)                                    | Increase the count of a specific product by its name.       |
+| `pantry_tracker.decrease_count`  | `product_name` (string) <br> `amount` (int, optional, default: 1)                                    | Decrease the count of a specific product by its name.       |
+| `pantry_tracker.barcode_increase`| `barcode` (string) <br> `amount` (int, optional, default: 1)                                         | Increase the count of a product by providing its barcode.   |
+| `pantry_tracker.barcode_decrease`| `barcode` (string) <br> `amount` (int, optional, default: 1)                                         | Decrease the count of a product by providing its barcode.   |
 
+## Service Call Examples
 
+<details>
+  
+<summary>Increase Count</summary>
 
-### `pantry_tracker.increase_count`
-**Description**: Increases the count of a specified product.
+<br>
 
-- **Parameters**:
-  - `entity_id` (string, required): The entity ID of the product. Example: `sensor.product_apple`.
-  - `amount` (integer, optional): The amount to increase the count by (default: `1`).
+```yaml
+service: pantry_tracker.increase_count
+data:
+  entity_id: sensor.product_banana
+  amount: 1
+```
+</details>
 
-- **Example Service Call**:
-  ```yaml
-  service: pantry_tracker.increase_count
-  data:
-    entity_id: sensor.product_apple
-    amount: 2
-  ```
+<details>
+  
+<summary>Decrease Count</summary>
 
-### `pantry_tracker.decrease_count`
+<br>
 
-**Description**: Decreases the count of a specified product.
-
-#### Parameters:
-- `entity_id` (string, required): The entity ID of the product.  
-  Example: `sensor.product_banana`.
-- `amount` (integer, optional): The amount to decrease the count by (default: `1`).
-
-#### Example Service Call:
 ```yaml
 service: pantry_tracker.decrease_count
 data:
@@ -192,3 +189,34 @@ data:
   amount: 1
 ```
 
+</details>
+
+<details>
+  
+<summary>Barcode Increase</summary>
+
+<br>
+
+```yaml
+service: pantry_tracker.barcode_increase
+data:
+  barcode: "123456789012"
+  amount: 3
+```
+
+</details>
+
+<details>
+  
+<summary>Barcode Decrease</summary>
+
+<br>
+
+```yaml
+service: pantry_tracker.barcode_decrease
+data:
+  barcode: "123456789012"
+  amount: 3
+```
+
+</details>
