@@ -2,16 +2,20 @@
 
 ## [Version 1.0.5](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.5)
 
-- Config flow now utilised
+- Changed naming convention to Pantry Tracker Sensor (from components)
+- Added config flow (this will not affect any sensors already created)
 
->[!IMPORTANT]
->Remove the below from config.yaml!
+## Update Steps:
 
+- After updating, add integration via Settings > Devices > Add Integration > Pantry Tracker Sensor
+- Remove the below YAML from config.yaml
 ```yaml
 sensor:
   - platform: pantry_tracker
     scan_interval: 30  # (Optional) defaults to 30 if not defined
 ```
+- Restart HomeAssistant
+
 
 ## [Version 1.0.4](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.4)
 
