@@ -7,6 +7,12 @@
 >[!IMPORTANT]
 >Remove the below from config.yaml!
 
+```yaml
+   sensor:
+     - platform: pantry_tracker
+       scan_interval: 30  # (Optional) defaults to 30 if not defined
+   ```
+
 ## [Version 1.0.4](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.4)
 
 - Barcode Attribute added
