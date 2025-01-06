@@ -1,6 +1,6 @@
 {
   "domain": "pantry_tracker",
-  "name": "Pantry Tracker Components",
+  "name": "Pantry Tracker Sensor",
   "version": "1.0.5-dev",
   "documentation": "https://github.com/mintcreg/pantry_tracker_sensor",
   "requirements": [

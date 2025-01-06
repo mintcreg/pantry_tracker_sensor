@@ -406,7 +406,7 @@ class CategoriesSensor(SensorEntity):
         """Attach under a single device in the UI."""
         return {
             "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Pantry Tracker Device",
+            "name": "Pantry Tracker",
             "manufacturer": "Pantry Tracker"
         }
 
@@ -458,7 +458,7 @@ class ProductSensor(SensorEntity):
         """Attach under the same device as CategoriesSensor."""
         return {
             "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Pantry Tracker Device",
+            "name": "Pantry Tracker",
             "manufacturer": "PantryTracker"
         }
 
