@@ -1,4 +1,4 @@
-# <p align="center"> Pantry Tracker - Custom Components </p>
+# <p align="center"> Pantry Tracker - Sensor </p>
 
 <p align="center">
 <img src="https://github.com/mintcreg/pantry_tracker/blob/main/images/logo.webp" alt="Pantry Tracker Card Logo" width="300">
@@ -9,7 +9,7 @@
 
 ## Description
 
-The **Pantry Tracker Custom Components** repository provides a set of Home Assistant integrations to enable seamless interaction between the **Pantry Tracker Add-on** and Home Assistant. These components allow you to automatically create sensors for pantry categories and products, update their counts in real time, and manage their lifecycle effectively.
+The **Pantry Tracker Sensor** repository provides a set of Home Assistant integrations to enable seamless interaction between the **Pantry Tracker Add-on** and Home Assistant. These components allow you to automatically create sensors for pantry categories and products, update their counts in real time, and manage their lifecycle effectively.
 
 ---
 
@@ -45,27 +45,23 @@ The **Pantry Tracker Custom Components** repository provides a set of Home Assis
 
 3. Install from HACS
 
-4. Add the below to config.yaml
-   ```yaml
-   sensor:
-     - platform: pantry_tracker
-       scan_interval: 30  # (Optional) defaults to 30 if not defined
-   ```
+4. Add the Integration via Settings > Devices > Add Integration "Pantry Tracker Sensor"
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=pantry_tracker)
    
 
 5. Restart HomeAssistant
+
 
 **Alternatively**
 
 1. Download and Install 
    Copy the `pantry_tracker` folder to the `custom_components` directory in your Home Assistant configuration.
 
-2. Add the below to config.yaml
-   ```yaml
-   sensor:
-     - platform: pantry_tracker
-       scan_interval: 30  # (Optional) defaults to 30 if not defined
-   ```
+2. Add the Integration via Settings > Devices > Add Integration "Pantry Tracker Sensor"
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=pantry_tracker)
+   
 
 ## Usage
 

@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "update_interval": "Update Interval (In seconds)",
+          "source": "Pantry Tracker URL"
+        }
+      },
+      "init": {
+        "data": {
+          "update_interval": "Update Interval (In seconds)",
+          "source": "Pantry Tracker URL"
+        }
+      }
+    }
+  }
+}
