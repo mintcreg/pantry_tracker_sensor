@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.0.6](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.6)
+
+- Breaking with HA 2025.1.2
+
 ## [Version 1.0.5](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.5)
 
 - Changed naming convention to Pantry Tracker Sensor (from components)
