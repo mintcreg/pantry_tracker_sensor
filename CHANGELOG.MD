@@ -2,7 +2,7 @@
 
 ## [Version 1.0.6](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.6)
 
-- Breaking with HA 2025.1.2
+-  Updating to HA version 2025.1.2 breaks service calls (now fixed)
 
 ## [Version 1.0.5](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.5)
 
