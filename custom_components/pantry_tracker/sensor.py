@@ -134,26 +134,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     # Schedule periodic updates
     async_track_time_interval(hass, async_update_interval, SCAN_INTERVAL)
 
-    # Register services
+    # -------------------------------------------------------------
+    # REGISTER SERVICES WITH CORRECT AWAIT
+    # -------------------------------------------------------------
+    async def async_increase_count(call: ServiceCall):
+        await handle_increase_count_service(hass, call, session, source, entry_data)
+
+    async def async_decrease_count(call: ServiceCall):
+        await handle_decrease_count_service(hass, call, session, source, entry_data)
+
+    async def async_barcode_increase(call: ServiceCall):
+        await handle_barcode_increase_service(hass, call, entry_data)
+
+    async def async_barcode_decrease(call: ServiceCall):
+        await handle_barcode_decrease_service(hass, call, entry_data)
+
     hass.services.async_register(
-        DOMAIN, "increase_count",
-        lambda call: handle_increase_count_service(hass, call, session, source, entry_data),
-        schema=INCREASE_COUNT_SCHEMA
+        DOMAIN, "increase_count", async_increase_count, schema=INCREASE_COUNT_SCHEMA
     )
     hass.services.async_register(
-        DOMAIN, "decrease_count",
-        lambda call: handle_decrease_count_service(hass, call, session, source, entry_data),
-        schema=DECREASE_COUNT_SCHEMA
+        DOMAIN, "decrease_count", async_decrease_count, schema=DECREASE_COUNT_SCHEMA
     )
     hass.services.async_register(
-        DOMAIN, "barcode_increase",
-        lambda call: handle_barcode_increase_service(hass, call, entry_data),
-        schema=BARCODE_OPERATION_SCHEMA
+        DOMAIN, "barcode_increase", async_barcode_increase, schema=BARCODE_OPERATION_SCHEMA
     )
     hass.services.async_register(
-        DOMAIN, "barcode_decrease",
-        lambda call: handle_barcode_decrease_service(hass, call, entry_data),
-        schema=BARCODE_OPERATION_SCHEMA
+        DOMAIN, "barcode_decrease", async_barcode_decrease, schema=BARCODE_OPERATION_SCHEMA
     )
 
 
