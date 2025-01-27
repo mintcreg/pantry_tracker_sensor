@@ -6,6 +6,7 @@
 - **Config flow update** - Updating the update interval or source would not actually apply new variables now fixed
 - **Enhanced Exception Handling:** - Added comprehensive try-except blocks in setup functions to catch and log unexpected errors.
 - **Sensor Initialization Stability:** - Fixed issues in sensor setup to gracefully handle missing or incomplete product data.
+- **Failed to load integration** - This has been fixed
 
 
 #### ⭐ Changes:
