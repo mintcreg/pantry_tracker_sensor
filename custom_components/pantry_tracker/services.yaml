@@ -1,0 +1,142 @@
+# services.yaml
+
+add_category:
+  description: "Add a new category."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    name:
+      description: "Name of the category to add."
+      example: "Fruits"
+
+delete_category:
+  description: "Delete an existing category and reassign its products to 'Uncategorized'."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    name:
+      description: "Name of the category to delete."
+      example: "Fruits"
+
+edit_category:
+  description: "Edit an existing category's name."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    old_name:
+      description: "Current name of the category."
+      example: "Fruits"
+    new_name:
+      description: "New name for the category."
+      example: "Fresh Fruits"
+
+add_product:
+  description: "Add a new product."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    name:
+      description: "Name of the product."
+      example: "Apple"
+    url:
+      description: "Image URL of the product."
+      example: "http://example.com/apple.jpg"
+    category:
+      description: "Category name of the product."
+      example: "Fruits"
+    barcode:
+      description: "Barcode of the product."
+      example: "1234567890123"
+
+delete_product:
+  description: "Delete a product by name."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    name:
+      description: "Name of the product to delete."
+      example: "Apple"
+
+edit_product:
+  description: "Edit an existing product's details."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    old_name:
+      description: "Current name of the product."
+      example: "Apple"
+    new_name:
+      description: "New name for the product."
+      example: "Green Apple"
+    category:
+      description: "New category for the product."
+      example: "Fresh Fruits"
+    url:
+      description: "New image URL for the product."
+      example: "http://example.com/green_apple.jpg"
+    barcode:
+      description: "New barcode for the product."
+      example: "1234567890124"
+
+update_count:
+  description: "Update the count of a specific product."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    product_name:
+      description: "Name of the product."
+      example: "Apple"
+    action:
+      description: "Action to perform: increase or decrease."
+      example: "increase"
+    amount:
+      description: "Amount to increase or decrease."
+      example: 1
+
+fetch_product:
+  description: "Fetch product data from OpenFoodFacts using the barcode."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    barcode:
+      description: "Barcode of the product."
+      example: "1234567890123"
+
+delete_database:
+  description: "Delete the database and reinitialize it, creating a backup beforehand."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+
+theme:
+  description: "Set the application theme."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+    theme:
+      description: "Theme to set: light or dark."
+      example: "dark"
+
+get_api_key:
+  description: "Retrieve the current API key."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
+
+regenerate_api_key:
+  description: "Regenerate the API key."
+  fields:
+    api_key:
+      description: "API key for authentication."
+      example: "your_api_key"
