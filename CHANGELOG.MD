@@ -9,10 +9,9 @@
 
 
 #### ⭐ Changes:
-- **Implemented SSL Support:** - Enabled secure connections by allowing users to toggle SSL usage.
-- **Expanded Configuration Options:** - Added fields for Host, Port, Use SSL, and Update Interval in the configuration flow. 
+- **Expanded Configuration Options:** - Added fields for Host, Port, API Key, and Update Interval in the configuration flow. 
 - **Enhanced Logging**
-- **Reload Config** - When changing the config (Host, Port, Use SSL, and Update Interval) this will reload all sensors gracefully
+- **Reload Config** - When changing the config (Host, Port, API Key, and Update Interval) this will reload all sensors gracefully
 
 
 #### TODO
