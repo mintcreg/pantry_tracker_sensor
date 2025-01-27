@@ -6,7 +6,7 @@
           "update_interval": "Update Interval (in seconds)",
           "host": "Pantry Tracker Host",
           "port": "Pantry Tracker Port",
-          "use_ssl": "Use SSL?"
+          "api_key": "API Key"
         },
         "errors": {
           "invalid_host": "The host should not include 'http://' or 'https://'. Please enter only the IP or hostname."
@@ -21,7 +21,7 @@
           "update_interval": "Update Interval (in seconds)",
           "host": "Pantry Tracker Host",
           "port": "Pantry Tracker Port",
-          "use_ssl": "Use SSL?"
+          "api_key": "API Key"
         }
       }
     }

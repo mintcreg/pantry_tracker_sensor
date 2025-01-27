@@ -19,7 +19,7 @@ from .const import (
     CONF_UPDATE_INTERVAL,
     CONF_HOST,
     CONF_PORT,
-    CONF_USE_SSL,
+    CONF_API_KEY,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     """Set up Pantry Tracker sensors from a config entry."""
     _LOGGER.debug("Starting setup of pantry_tracker sensors from config entry.")
 
-    # 1. Merge options + data for update_interval, host, port, use_ssl
+    # 1. Merge options + data for update_interval, host, port, api_key
     update_interval_seconds = entry.options.get(
         CONF_UPDATE_INTERVAL,
         entry.data.get(CONF_UPDATE_INTERVAL, 30)
@@ -73,9 +73,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         CONF_PORT,
         entry.data.get(CONF_PORT, 8099)
     )
-    use_ssl = entry.options.get(
-        CONF_USE_SSL,
-        entry.data.get(CONF_USE_SSL, False)
+    api_key = entry.options.get(
+        CONF_API_KEY,
+        entry.data.get(CONF_API_KEY, "")
     )
 
     # Ensure host does not contain 'http://' or 'https://'
@@ -84,20 +84,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         host = host.split("://")[1]
 
     # Build final URL
-    protocol = "https" if use_ssl else "http"
+    protocol = "http"  # SSL removed
     source = f"{protocol}://{host}:{port}"
 
     SCAN_INTERVAL = timedelta(seconds=update_interval_seconds)
     _LOGGER.debug(
-        "Using update_interval=%s, host=%s, port=%s, use_ssl=%s => final URL=%s",
-        update_interval_seconds, host, port, use_ssl, source
+        "Using update_interval=%s, host=%s, port=%s => final URL=%s",
+        update_interval_seconds, host, port, source
     )
 
     try:
-        # If you want to trust SSL certs, remove ssl=False
-        connector = aiohttp.TCPConnector(ssl=False)
-        session = aiohttp.ClientSession(connector=connector)
-        _LOGGER.debug("Created aiohttp session (SSL verification disabled?).")
+        headers = {
+            "X-API-KEY": api_key  # Updated header
+        }
+        # Log headers for debugging (REMOVE in production)
+        _LOGGER.debug("HTTP Headers: %s", headers)
+        connector = aiohttp.TCPConnector(ssl=False)  # SSL is removed
+        session = aiohttp.ClientSession(connector=connector, headers=headers)
+        _LOGGER.debug("Created aiohttp session with API key.")
     except Exception as e:
         _LOGGER.error("Failed to create aiohttp session: %s", e)
         return False  # Explicitly return False to indicate setup failure

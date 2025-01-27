@@ -12,7 +12,7 @@ from .const import (
     CONF_UPDATE_INTERVAL,
     CONF_HOST,
     CONF_PORT,
-    CONF_USE_SSL,
+    CONF_API_KEY,  # Import the new constant
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,37 +21,51 @@ _LOGGER = logging.getLogger(__name__)
 class PantryTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Pantry Tracker."""
 
-    VERSION = 1
+    VERSION = 2  # Increment the version since we're making changes
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step from the user."""
         errors = {}
 
         if user_input is not None:
-            # Create the config entry with the 4 fields
+            # Validate the host does not contain 'http://' or 'https://'
+            host = user_input[CONF_HOST]
+            if "://" in host:
+                errors["base"] = "invalid_host"
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=self._get_schema(),
+                    errors=errors
+                )
+
+            # Create the config entry with the fields
             return self.async_create_entry(
                 title="Pantry Tracker",
                 data={
                     CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
-                    CONF_HOST: user_input[CONF_HOST],
+                    CONF_HOST: host,
                     CONF_PORT: user_input[CONF_PORT],
-                    CONF_USE_SSL: user_input[CONF_USE_SSL],
+                    CONF_API_KEY: user_input[CONF_API_KEY],  # Save the API key
                 }
             )
 
         # Build the schema for the user step
-        data_schema = vol.Schema({
-            vol.Required(CONF_UPDATE_INTERVAL, default=30): cv.positive_int,
-            vol.Required(CONF_HOST, default="127.0.0.1"): cv.string,
-            vol.Required(CONF_PORT, default=8099): cv.port,
-            vol.Required(CONF_USE_SSL, default=False): cv.boolean,
-        })
+        data_schema = self._get_schema()
 
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
             errors=errors
         )
+
+    def _get_schema(self):
+        """Return the schema for the user step."""
+        return vol.Schema({
+            vol.Required(CONF_UPDATE_INTERVAL, default=30): cv.positive_int,
+            vol.Required(CONF_HOST, default="127.0.0.1"): cv.string,
+            vol.Required(CONF_PORT, default=8099): cv.port,
+            vol.Required(CONF_API_KEY): cv.string,  # New API key field
+        })
 
     @staticmethod
     @callback
@@ -90,16 +104,16 @@ class PantryTrackerOptionsFlowHandler(config_entries.OptionsFlow):
             CONF_PORT,
             current_data.get(CONF_PORT, 8099)
         )
-        use_ssl = current_options.get(
-            CONF_USE_SSL,
-            current_data.get(CONF_USE_SSL, False)
+        api_key = current_options.get(
+            CONF_API_KEY,
+            current_data.get(CONF_API_KEY, "")
         )
 
         data_schema = vol.Schema({
             vol.Optional(CONF_UPDATE_INTERVAL, default=update_interval): cv.positive_int,
             vol.Optional(CONF_HOST, default=host): cv.string,
             vol.Optional(CONF_PORT, default=port): cv.port,
-            vol.Optional(CONF_USE_SSL, default=use_ssl): cv.boolean,
+            vol.Optional(CONF_API_KEY, default=api_key): cv.string,  # API key in options
         })
 
         return self.async_show_form(step_id="init", data_schema=data_schema)
