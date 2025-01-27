@@ -14,11 +14,6 @@
 - **Enhanced Logging**
 - **Reload Config** - When changing the config (Host, Port, API Key, and Update Interval) this will reload all sensors gracefully
 - **API Key** - As of [Pantry Tracker V1.0.54](https://github.com/mintcreg/pantry_tracker/releases/tag/v1.0.54) API keys have been introduced and required for added security
-
-
-#### TODO
-
-- API Key
  
 
 ## [Version 1.0.6](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.6)
