@@ -1,5 +1,27 @@
 # Changelog
 
+## [Version 1.0.7-dev](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.7)
+
+#### 🔨 Fixes:
+- **Config flow update** - Updating the update interval or source would not actually apply new variables now fixed
+- **Enhanced Exception Handling:** - Added comprehensive try-except blocks in setup functions to catch and log unexpected errors.
+- **Sensor Initialization Stability:** - Fixed issues in sensor setup to gracefully handle missing or incomplete product data.
+
+
+#### ⭐ Changes:
+- **Implemented SSL Support:** - Enabled secure connections by allowing users to toggle SSL usage.
+- **Expanded Configuration Options:** - Added fields for Host, Port, Use SSL, and Update Interval in the configuration flow. 
+- **Enhanced Logging**
+- **Reload Config** - When changing the config (Host, Port, Use SSL, and Update Interval) this will reload all sensors gracefully
+
+
+
+ 
+
+## [Version 1.0.6](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.6)
+
+-  Updating to HA version 2025.1.2 breaks service calls (now fixed)
+
 ## [Version 1.0.5](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.5)
 
 - Changed naming convention to Pantry Tracker Sensor (from components)
