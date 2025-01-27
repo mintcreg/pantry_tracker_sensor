@@ -15,7 +15,9 @@
 - **Reload Config** - When changing the config (Host, Port, Use SSL, and Update Interval) this will reload all sensors gracefully
 
 
+#### TODO
 
+- API Key
  
 
 ## [Version 1.0.6](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.6)
