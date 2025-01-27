@@ -8,52 +8,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_registry import async_get
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import Platform
-from homeassistant.helpers.aiohttp_client import async_get_clientsession  # NEW IMPORT
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-
-
-async def async_get_addon_port(hass: HomeAssistant, addon_slug: str) -> int | None:
-    """
-    Query the Supervisor API for the add-on and extract the mapped host port
-    for 8099/tcp if it exists. Return None if not found or on error.
-    """
-    _LOGGER.debug("Attempting to fetch port for add-on slug '%s'", addon_slug)
-
-    session = async_get_clientsession(hass)
-    supervisor_token = os.getenv("SUPERVISOR_TOKEN")
-
-    if not supervisor_token:
-        _LOGGER.error("No SUPERVISOR_TOKEN found. Are we running under Home Assistant OS or Supervised?")
-        return None
-
-    url = f"http://supervisor/addons/{addon_slug}/info"
-    headers = {"Authorization": f"Bearer {supervisor_token}"}
-
-    try:
-        async with session.get(url, headers=headers) as resp:
-            if resp.status != 200:
-                _LOGGER.error("Error calling Supervisor API (%s): %s", resp.status, await resp.text())
-                return None
-
-            data = await resp.json()
-            addon_data = data.get("data", {})
-            network_info = addon_data.get("network", {})
-
-            # Example: network_info might be {"8099/tcp": 8123}
-            for container_port, host_port in network_info.items():
-                if container_port.startswith("8099"):
-                    _LOGGER.info("Found mapped port for %s: %s", container_port, host_port)
-                    return host_port
-
-            _LOGGER.warning("Port 8099/tcp not found in add-on 'network' info: %s", network_info)
-            return None
-
-    except Exception as err:
-        _LOGGER.error("Failed to fetch add-on info from Supervisor: %s", err)
-        return None
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType):
@@ -69,27 +27,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     _LOGGER.info("Pantry Tracker integration set up successfully.")
 
-    # Instead of hass.async_create_task(...), we now await the forward setup
-    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    # Listen for option changes so we reload the integration
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    # Forward setup to the sensor platform
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
-    _LOGGER.info("Unloading Pantry Tracker integration.")
+    _LOGGER.info("Unloading Pantry Tracker integration...")
+
+    # Cancel the sensor update interval if stored in entry_data
+    entry_data = hass.data[DOMAIN].get(entry.entry_id, {})
+    unsub = entry_data.pop("update_interval_unsub", None)
+    if unsub:
+        _LOGGER.info("Cancelling the Pantry Tracker update interval before unloading.")
+        unsub()
 
     # Unload the sensor platform
     unload_ok = await hass.config_entries.async_unload_platforms(entry, [Platform.SENSOR])
 
     # Remove all entities for this config entry
-    registry = await async_get(hass)
+    registry = async_get(hass)  # Not an async call
     entities_to_remove = [
         entity.entity_id
         for entity in registry.entities.values()
         if entity.platform == DOMAIN and entity.config_entry_id == entry.entry_id
     ]
-
     for entity_id in entities_to_remove:
         registry.async_remove(entity_id)
         _LOGGER.info(f"Removed entity {entity_id} as part of cleanup.")
@@ -106,6 +72,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         _LOGGER.info(f"Data file {data_file} does not exist. No need to delete.")
 
     hass.data[DOMAIN].pop(entry.entry_id, None)
-
     _LOGGER.info("Pantry Tracker integration unloaded successfully.")
     return unload_ok
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """
+    Reload Pantry Tracker config entry when options change.
+    This ensures the sensor code re-reads the updated port/URL.
+    """
+    _LOGGER.info("Reloading Pantry Tracker config entry: %s", entry.entry_id)
+    await hass.config_entries.async_reload(entry.entry_id)

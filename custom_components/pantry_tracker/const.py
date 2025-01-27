@@ -1,5 +1,8 @@
 # custom_components/pantry_tracker/const.py
 
 DOMAIN = "pantry_tracker"
+
 CONF_UPDATE_INTERVAL = "update_interval"
-CONF_SOURCE = "source"
+CONF_HOST = "host"
+CONF_PORT = "port"
+CONF_USE_SSL = "use_ssl"

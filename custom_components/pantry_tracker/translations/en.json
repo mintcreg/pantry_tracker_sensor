@@ -3,14 +3,25 @@
     "step": {
       "user": {
         "data": {
-          "update_interval": "Update Interval (In seconds)",
-          "source": "Pantry Tracker URL"
+          "update_interval": "Update Interval (in seconds)",
+          "host": "Pantry Tracker Host",
+          "port": "Pantry Tracker Port",
+          "use_ssl": "Use SSL?"
+        },
+        "errors": {
+          "invalid_host": "The host should not include 'http://' or 'https://'. Please enter only the IP or hostname."
         }
-      },
+      }
+    }
+  },
+  "options": {
+    "step": {
       "init": {
         "data": {
-          "update_interval": "Update Interval (In seconds)",
-          "source": "Pantry Tracker URL"
+          "update_interval": "Update Interval (in seconds)",
+          "host": "Pantry Tracker Host",
+          "port": "Pantry Tracker Port",
+          "use_ssl": "Use SSL?"
         }
       }
     }
