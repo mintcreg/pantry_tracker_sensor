@@ -4,6 +4,12 @@
 <img src="https://github.com/mintcreg/pantry_tracker/blob/main/images/logo.webp" alt="Pantry Tracker Card Logo" width="300">
 </p>
 
+<p align="center">
+  <img alt="Release" src="https://img.shields.io/github/v/release/mintcreg/pantry_tracker_sensor?&cacheBust=true"/>
+  <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"/>
+  
+</p>
+
 > [!CAUTION]
 > This is a work in progress and made using GPT and basic knowledge.
 
