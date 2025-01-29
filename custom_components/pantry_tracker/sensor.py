@@ -14,7 +14,13 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
-from .const import DOMAIN, CONF_UPDATE_INTERVAL, CONF_SOURCE
+from .const import (
+    DOMAIN,
+    CONF_UPDATE_INTERVAL,
+    CONF_HOST,
+    CONF_PORT,
+    CONF_API_KEY,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,28 +51,60 @@ async def remove_entity_async(hass: HomeAssistant, entity_id: str):
     entry = entity_registry.async_get(entity_id)
     if entry:
         entity_registry.async_remove(entity_id)
-        _LOGGER.info(f"Removed entity from registry: {entity_id}")
+        _LOGGER.info("Removed entity from registry: %s", entity_id)
     else:
-        _LOGGER.warning(f"Entity not found in registry: {entity_id}")
+        _LOGGER.warning("Entity not found in registry: %s", entity_id)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up Pantry Tracker sensors from a config entry."""
     _LOGGER.debug("Starting setup of pantry_tracker sensors from config entry.")
 
-    update_interval_seconds = entry.data.get(CONF_UPDATE_INTERVAL, 30)
-    source = entry.data.get(CONF_SOURCE, "http://homeassistant.local:8099")
+    # 1. Merge options + data for update_interval, host, port, api_key
+    update_interval_seconds = entry.options.get(
+        CONF_UPDATE_INTERVAL,
+        entry.data.get(CONF_UPDATE_INTERVAL, 30)
+    )
+    host = entry.options.get(
+        CONF_HOST,
+        entry.data.get(CONF_HOST, "127.0.0.1")
+    )
+    port = entry.options.get(
+        CONF_PORT,
+        entry.data.get(CONF_PORT, 8099)
+    )
+    api_key = entry.options.get(
+        CONF_API_KEY,
+        entry.data.get(CONF_API_KEY, "")
+    )
+
+    # Ensure host does not contain 'http://' or 'https://'
+    if "://" in host:
+        _LOGGER.warning("Host should not include protocol. Stripping it.")
+        host = host.split("://")[1]
+
+    # Build final URL
+    protocol = "http"  # SSL removed
+    source = f"{protocol}://{host}:{port}"
 
     SCAN_INTERVAL = timedelta(seconds=update_interval_seconds)
-    _LOGGER.debug(f"Using update_interval: {SCAN_INTERVAL}, source: {source}")
+    _LOGGER.debug(
+        "Using update_interval=%s, host=%s, port=%s => final URL=%s",
+        update_interval_seconds, host, port, source
+    )
 
     try:
-        connector = aiohttp.TCPConnector(ssl=False)
-        session = aiohttp.ClientSession(connector=connector)
-        _LOGGER.debug("Created aiohttp session with SSL verification disabled.")
+        headers = {
+            "X-API-KEY": api_key  # Updated header
+        }
+        # Log headers for debugging (REMOVE in production)
+        _LOGGER.debug("HTTP Headers: %s", headers)
+        connector = aiohttp.TCPConnector(ssl=False)  # SSL is removed
+        session = aiohttp.ClientSession(connector=connector, headers=headers)
+        _LOGGER.debug("Created aiohttp session with API key.")
     except Exception as e:
-        _LOGGER.error(f"Failed to create aiohttp session: {e}")
-        return
+        _LOGGER.error("Failed to create aiohttp session: %s", e)
+        return False  # Explicitly return False to indicate setup failure
 
     # Stash data for further usage
     hass.data.setdefault(DOMAIN, {})
@@ -101,7 +139,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             url = product_attributes.pop("url", "")
             category = product_attributes.pop("category", "")
         except KeyError as e:
-            _LOGGER.error(f"Product missing key {e}: {p}")
+            _LOGGER.error("Product missing key %s: %s", e, p)
             continue
 
         entity_id = sanitize_entity_id(name)
@@ -124,18 +162,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         _LOGGER.info("Adding %d sensors (including categories).", len(sensors_to_add))
         async_add_entities(sensors_to_add, True)
 
-    # -------------------------------------------------------------
-    # IMPORTANT: define an async callback that we directly await
-    # -------------------------------------------------------------
+    # ---------------------------------------------
+    # Track time interval for periodic updates
+    # ---------------------------------------------
     async def async_update_interval(now):
         """Async callback that fetches updates and syncs sensors."""
         await async_update_sensors(hass, entry, entry_data, source, async_add_entities)
 
-    # Schedule periodic updates
-    async_track_time_interval(hass, async_update_interval, SCAN_INTERVAL)
+    unsub = async_track_time_interval(hass, async_update_interval, SCAN_INTERVAL)
+    entry_data["update_interval_unsub"] = unsub
 
     # -------------------------------------------------------------
-    # REGISTER SERVICES WITH CORRECT AWAIT
+    # REGISTER SERVICES
     # -------------------------------------------------------------
     async def async_increase_count(call: ServiceCall):
         await handle_increase_count_service(hass, call, session, source, entry_data)
@@ -149,23 +187,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async def async_barcode_decrease(call: ServiceCall):
         await handle_barcode_decrease_service(hass, call, entry_data)
 
-    hass.services.async_register(
-        DOMAIN, "increase_count", async_increase_count, schema=INCREASE_COUNT_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, "decrease_count", async_decrease_count, schema=DECREASE_COUNT_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, "barcode_increase", async_barcode_increase, schema=BARCODE_OPERATION_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, "barcode_decrease", async_barcode_decrease, schema=BARCODE_OPERATION_SCHEMA
-    )
+    hass.services.async_register(DOMAIN, "increase_count", async_increase_count, schema=INCREASE_COUNT_SCHEMA)
+    hass.services.async_register(DOMAIN, "decrease_count", async_decrease_count, schema=DECREASE_COUNT_SCHEMA)
+    hass.services.async_register(DOMAIN, "barcode_increase", async_barcode_increase, schema=BARCODE_OPERATION_SCHEMA)
+    hass.services.async_register(DOMAIN, "barcode_decrease", async_barcode_decrease, schema=BARCODE_OPERATION_SCHEMA)
+
+    return True  # Explicitly return True to indicate successful setup
 
 
 async def fetch_pantry_data(session, source, entry_data):
     """Fetch categories, products, and counts from your external API."""
-    # Fetch categories
     try:
         async with session.get(f"{source}/categories") as resp:
             if resp.status == 200:
@@ -173,16 +204,15 @@ async def fetch_pantry_data(session, source, entry_data):
                 if isinstance(categories, list):
                     entry_data["categories"] = categories
                 else:
-                    _LOGGER.warning(f"Fetched categories is not a list: {categories}")
+                    _LOGGER.warning("Fetched categories is not a list: %s", categories)
                     entry_data["categories"] = []
             else:
-                _LOGGER.error(f"Failed to fetch categories. Status Code: {resp.status}")
+                _LOGGER.error("Failed to fetch categories. Status Code=%s", resp.status)
                 entry_data["categories"] = []
     except Exception as e:
-        _LOGGER.error(f"Error while fetching categories: {e}")
+        _LOGGER.error("Error while fetching categories: %s", e)
         entry_data["categories"] = []
 
-    # Fetch products
     try:
         async with session.get(f"{source}/products") as resp:
             if resp.status == 200:
@@ -190,16 +220,15 @@ async def fetch_pantry_data(session, source, entry_data):
                 if isinstance(products, list):
                     entry_data["products"] = products
                 else:
-                    _LOGGER.warning(f"Fetched products is not a list: {products}")
+                    _LOGGER.warning("Fetched products is not a list: %s", products)
                     entry_data["products"] = []
             else:
-                _LOGGER.error(f"Failed to fetch products. Status Code: {resp.status}")
+                _LOGGER.error("Failed to fetch products. Status Code=%s", resp.status)
                 entry_data["products"] = []
     except Exception as e:
-        _LOGGER.error(f"Error while fetching products: {e}")
+        _LOGGER.error("Error while fetching products: %s", e)
         entry_data["products"] = []
 
-    # Fetch counts
     try:
         async with session.get(f"{source}/counts") as resp:
             if resp.status == 200:
@@ -207,13 +236,13 @@ async def fetch_pantry_data(session, source, entry_data):
                 if isinstance(counts, dict):
                     entry_data["product_counts"] = counts
                 else:
-                    _LOGGER.warning(f"Fetched counts is not a dict: {counts}")
+                    _LOGGER.warning("Fetched counts is not a dict: %s", counts)
                     entry_data["product_counts"] = {}
             else:
-                _LOGGER.error(f"Failed to fetch counts. Status Code: {resp.status}")
+                _LOGGER.error("Failed to fetch counts. Status Code=%s", resp.status)
                 entry_data["product_counts"] = {}
     except Exception as e:
-        _LOGGER.error(f"Error while fetching counts: {e}")
+        _LOGGER.error("Error while fetching counts: %s", e)
         entry_data["product_counts"] = {}
 
 
@@ -239,7 +268,7 @@ async def async_update_sensors(hass: HomeAssistant, entry: ConfigEntry, entry_da
             url = product_attributes.pop("url", "")
             category = product_attributes.pop("category", "")
         except KeyError as e:
-            _LOGGER.error(f"Product missing key {e}: {p}")
+            _LOGGER.error("Product missing key %s: %s", e, p)
             continue
 
         entity_id = sanitize_entity_id(name)
@@ -263,7 +292,7 @@ async def async_update_sensors(hass: HomeAssistant, entry: ConfigEntry, entry_da
             )
             entry_data["entities"][entity_id] = sensor
             new_sensors.append(sensor)
-            _LOGGER.info(f"Detected new product '{name}'. Adding sensor.")
+            _LOGGER.info("Detected new product '%s'. Adding sensor.", name)
 
     # Remove disappeared products
     existing_ids = set(entry_data["entities"].keys())
@@ -271,12 +300,12 @@ async def async_update_sensors(hass: HomeAssistant, entry: ConfigEntry, entry_da
     for rid in removed_ids:
         sensor = entry_data["entities"].pop(rid, None)
         if sensor:
-            _LOGGER.info(f"Removed sensor for entity_id {rid} as it's no longer present.")
+            _LOGGER.info("Removed sensor for entity_id %s as it's no longer present.", rid)
             await remove_entity_async(hass, rid)
 
     # Add new sensors
     if new_sensors:
-        _LOGGER.info(f"Adding {len(new_sensors)} new product sensors.")
+        _LOGGER.info("Adding %d new product sensors.", len(new_sensors))
         async_add_entities(new_sensors, True)
 
     # Update counts on all product sensors
@@ -293,7 +322,7 @@ async def handle_increase_count_service(hass: HomeAssistant, call: ServiceCall, 
 
     sensor = entry_data["entities"].get(entity_id)
     if not sensor or not isinstance(sensor, ProductSensor):
-        _LOGGER.error(f"Entity {entity_id} not found for increase_count")
+        _LOGGER.error("Entity %s not found for increase_count", entity_id)
         return
 
     try:
@@ -312,11 +341,11 @@ async def handle_increase_count_service(hass: HomeAssistant, call: ServiceCall, 
                     sensor.update_count(new_count)
                     _LOGGER.debug("Successfully increased count via API.")
                 else:
-                    _LOGGER.error(f"Failed to increase count via API: {data.get('message')}")
+                    _LOGGER.error("Failed to increase count via API: %s", data.get("message"))
             else:
-                _LOGGER.error(f"Failed to increase count. Status={response.status}")
+                _LOGGER.error("Failed to increase count. Status=%s", response.status)
     except Exception as e:
-        _LOGGER.error(f"Unexpected error while increasing count via API: {e}")
+        _LOGGER.error("Unexpected error while increasing count via API: %s", e)
 
 
 async def handle_decrease_count_service(hass: HomeAssistant, call: ServiceCall, session, source, entry_data):
@@ -325,7 +354,7 @@ async def handle_decrease_count_service(hass: HomeAssistant, call: ServiceCall, 
 
     sensor = entry_data["entities"].get(entity_id)
     if not sensor or not isinstance(sensor, ProductSensor):
-        _LOGGER.error(f"Entity {entity_id} not found for decrease_count")
+        _LOGGER.error("Entity %s not found for decrease_count", entity_id)
         return
 
     try:
@@ -344,11 +373,11 @@ async def handle_decrease_count_service(hass: HomeAssistant, call: ServiceCall, 
                     sensor.update_count(new_count)
                     _LOGGER.debug("Successfully decreased count via API.")
                 else:
-                    _LOGGER.error(f"Failed to decrease count via API: {data.get('message')}")
+                    _LOGGER.error("Failed to decrease count via API: %s", data.get("message"))
             else:
-                _LOGGER.error(f"Failed to decrease count. Status={response.status}")
+                _LOGGER.error("Failed to decrease count. Status=%s", response.status)
     except Exception as e:
-        _LOGGER.error(f"Unexpected error while decreasing count via API: {e}")
+        _LOGGER.error("Unexpected error while decreasing count via API: %s", e)
 
 
 async def handle_barcode_increase_service(hass: HomeAssistant, call: ServiceCall, entry_data):
@@ -360,13 +389,13 @@ async def handle_barcode_increase_service(hass: HomeAssistant, call: ServiceCall
         if isinstance(s, ProductSensor) and s.extra_state_attributes.get("barcode") == barcode
     ]
     if not matching_sensors:
-        _LOGGER.error(f"No sensor found with barcode {barcode}")
+        _LOGGER.error("No sensor found with barcode %s", barcode)
         return
 
     for sensor in matching_sensors:
         new_count = sensor.native_value + amount
         sensor.update_count(new_count)
-        _LOGGER.info(f"Increased count for sensor {sensor.entity_id} by {amount}. New count: {new_count}")
+        _LOGGER.info("Increased count for sensor %s by %s. New count: %s", sensor.entity_id, amount, new_count)
 
 
 async def handle_barcode_decrease_service(hass: HomeAssistant, call: ServiceCall, entry_data):
@@ -378,13 +407,13 @@ async def handle_barcode_decrease_service(hass: HomeAssistant, call: ServiceCall
         if isinstance(s, ProductSensor) and s.extra_state_attributes.get("barcode") == barcode
     ]
     if not matching_sensors:
-        _LOGGER.error(f"No sensor found with barcode {barcode}")
+        _LOGGER.error("No sensor found with barcode %s", barcode)
         return
 
     for sensor in matching_sensors:
         new_count = max(sensor.native_value - amount, 0)
         sensor.update_count(new_count)
-        _LOGGER.info(f"Decreased count for sensor {sensor.entity_id} by {amount}. New count: {new_count}")
+        _LOGGER.info("Decreased count for sensor %s by %s. New count: %s", sensor.entity_id, amount, new_count)
 
 
 # --------------------------- Entities ---------------------------
