@@ -1,11 +1,6 @@
-
-# Project Title
-
-A brief description of what this project does and who it's for
-
 # Changelog
 
-## [Version 1.0.7-dev](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.7)
+## [Version 1.0.7](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.7)
 
 #### ⚠️ Upgrading Steps (Somewhat Breaking)
 - Obtain API Key from Pantry Tracker > Settings Cog > API Key
