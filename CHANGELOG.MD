@@ -1,6 +1,20 @@
+
+# Project Title
+
+A brief description of what this project does and who it's for
+
 # Changelog
 
 ## [Version 1.0.7-dev](https://github.com/mintcreg/pantry_tracker_sensor/releases/tag/v1.0.7)
+
+#### ⚠️ Upgrading Steps (Somewhat Breaking)
+- Obtain API Key from Pantry Tracker > Settings Cog > API Key
+- Navigate to [Pantry Tracker Device](https://my.home-assistant.io/redirect/integration/?domain=pantry_tracker) and select 'Configure'
+- Input the API Key
+- Click 'Submit'
+
+All data will be retained including recorder and history
+
 
 #### 🔨 Fixes:
 - **Config flow update** - Updating the update interval or source would not actually apply new variables now fixed
