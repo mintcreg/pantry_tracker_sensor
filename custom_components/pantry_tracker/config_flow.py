@@ -62,7 +62,7 @@ class PantryTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Return the schema for the user step."""
         return vol.Schema({
             vol.Required(CONF_UPDATE_INTERVAL, default=30): cv.positive_int,
-            vol.Required(CONF_HOST, default="127.0.0.1"): cv.string,
+            vol.Required(CONF_HOST, default="homeassistant.local"): cv.string,
             vol.Required(CONF_PORT, default=8099): cv.port,
             vol.Required(CONF_API_KEY): cv.string,  # New API key field
         })
